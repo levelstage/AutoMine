@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from collections import deque
-from GameEngine import MsEngine
+from GameEngine.MsEngine import MsEngine
 
 # 인공지능 모델한테 지뢰찾기의 규칙을 알려줄 선생님
 class MsTeacher:
@@ -177,39 +177,39 @@ class MsTeacher:
             answers.append(safety.copy())
         return problems, answers
     
-def generate_dataset(self, size):
-        # 일단 예외 처리
-        if size <= 0:
-            return [], []
-        
-        problems = []
-        answers = []
-        
-        print(f"데이터 생성 중... 목표: {size}개")
-        
-        # 목표 개수를 채울 때까지 계속 생성
-        while len(problems) < size:
-            dp, da = self.solve()
-            problems.extend(dp)
-            answers.extend(da)
-        
-        # 균등한 학습을 위한 셔플 로직
-        
-        # 1. 문제와 정답을 하나로 묶고
-        combined = list(zip(problems, answers))
-        
-        # 2. 묶인 상태로 섞어야 함.
-        random.shuffle(combined)
-        
-        # 3. 목표 개수만큼 자르면
-        combined = combined[:size]
-        
-        # 4. 짜잔!
-        problems, answers = zip(*combined)
-
-        # 5. 리스트화해서 배출하면 끝
-        problems = list(problems)
-        answers = list(answers)
+    def generate_dataset(self, size):
+            # 일단 예외 처리
+            if size <= 0:
+                return [], []
             
-        print(f"생성 및 셔플 완료! (X: {len(problems)}, Y: {len(answers)})")
-        return problems, answers
+            problems = []
+            answers = []
+            
+            print(f"데이터 생성 중... 목표: {size}개")
+            
+            # 목표 개수를 채울 때까지 계속 생성
+            while len(problems) < size:
+                dp, da = self.solve()
+                problems.extend(dp)
+                answers.extend(da)
+            
+            # 균등한 학습을 위한 셔플 로직
+            
+            # 1. 문제와 정답을 하나로 묶고
+            combined = list(zip(problems, answers))
+            
+            # 2. 묶인 상태로 섞어야 함.
+            random.shuffle(combined)
+            
+            # 3. 목표 개수만큼 자르면
+            combined = combined[:size]
+            
+            # 4. 짜잔!
+            problems, answers = zip(*combined)
+
+            # 5. 리스트화해서 배출하면 끝
+            problems = list(problems)
+            answers = list(answers)
+                
+            print(f"생성 및 셔플 완료! (X: {len(problems)}, Y: {len(answers)})")
+            return problems, answers
