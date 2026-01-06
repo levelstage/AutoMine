@@ -43,7 +43,7 @@ class Sigmoid:
         return dx
     
 class Conv2d:
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, init_scale='he'):
+    def __init__(self, in_channels, out_channels, filter_size, stride=1, padding=0, init_scale='he'):
         """
         init_scale: 'he' (ReLU용) 또는 'xavier' (Sigmoid용) 또는 float값
         """
@@ -52,10 +52,10 @@ class Conv2d:
         self.pad = padding
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.kernel_size = kernel_size
+        self.filter_size = filter_size
 
         # 입력 노드 수 계산
-        fan_in = in_channels * kernel_size * kernel_size
+        fan_in = in_channels * filter_size * filter_size
         # 표준편차 계산
         if isinstance(init_scale, float):
             # 표준편차를 직접 정하는 경우
@@ -69,7 +69,7 @@ class Conv2d:
             z = math.sqrt(1/fan_in)
         
         # 가중치, 바이어스 초기값 설정
-        self.W = np.random.randn(out_channels, in_channels, kernel_size, kernel_size) * z
+        self.W = np.random.randn(out_channels, in_channels, filter_size, filter_size) * z
         self.b = np.zeros(out_channels)
         
         # 역전파용 캐시
@@ -109,9 +109,9 @@ class Conv2d:
         # dL/db = dL/dy @ dy/db(=1), but dL/db의 형상이 (N*OH*OW, FN)이므로 전부 합산해서 (FN)으로 눌러줌.  
         self.db = np.sum(dout, axis=0)
         # dW(dL/dW) = dL/dy * dy/dW = x.T @ dout 
-        self.dW = np.dot(self.col.T, dout).T.reshape(self.out_channels, self.in_channels, self.kernel_size, self.kernel_size)
+        self.dW = np.dot(self.col.T, dout).T.reshape(self.out_channels, self.in_channels, self.filter_size, self.filter_size)
         # dx(dL/dx) = dL/dy * dy/dx = dout @ W.T, 형상을 원상복구해주면서 return 하면 끝! 
-        dx = col2im(np.dot(dout, self.col_W.transpose()), self.x.shape, self.kernel_size, self.kernel_size, self.stride, self.pad)
+        dx = col2im(np.dot(dout, self.col_W.transpose()), self.x.shape, self.filter_size, self.filter_size, self.stride, self.pad)
         return dx
     
 class Affine:
@@ -162,43 +162,42 @@ class Affine:
         dx = np.dot(dout, self.W.T).reshape(self.x.shape)
         return dx
     
-    class BinaryCrossEntropy:
-        def __init__(self):
-            self.y = None
-            self.t = None
-            
-        def forward(self, y, t):
-            """
-            y: 신경망의 출력 (확률값, 0.0 ~ 1.0) - Shape: (N, 1) 또는 (N,)
-            t: 정답 레이블 (확률값, 0.0 ~ 1.0) - Shape: y와 동일
-            """
-            self.y = y
-            self.t = t
+class BinaryCrossEntropy:
+    def __init__(self):
+        self.y = None
+        self.t = None
+        
+    def forward(self, y, t):
+        """
+        y: 신경망의 출력 (확률값, 0.0 ~ 1.0) - Shape: (N, 1) 또는 (N,)
+        t: 정답 레이블 (확률값, 0.0 ~ 1.0) - Shape: y와 동일
+        """
+        self.y = y
+        self.t = t
 
-            #batch_size 가져오기
-            batch_size = y.shape[0]
-            
-            # 로그 폭발 방지용 작은 값 (예: 1e-7)
-            delta = 1e-7
-            
-            # 배치 전체의 평균 에러 계산
-            # 공식: -sum( t*log(y) + (1-t)*log(1-y) ) / batch_size
-            loss = -np.sum(t * np.log(y+delta).T + (1-t) * np.log(1-y+delta).T) / batch_size
-            
-            return loss
+        #batch_size 가져오기
+        batch_size = y.shape[0]
+        
+        # 로그 폭발 방지용 작은 값 (예: 1e-7)
+        delta = 1e-7
+        
+        # 배치 전체의 평균 에러 계산
+        # 공식: -sum( t*log(y) + (1-t)*log(1-y) ) / batch_size
+        loss = -np.sum(t * np.log(y+delta) + (1-t) * np.log(1-y+delta)) / batch_size
+        
+        return loss
 
-        def backward(self, dout=1):
-            """
-            dout: 상류에서 온 미분값 (보통 1)
-            Returns: dx (입력 y에 대한 미분값 dL/dy)
-            """
-            # batch_size 가져오기
-            batch_size = self.y.shape[0]
-            delta = 1e-7
-            
-            # dL/dy 계산
-            # 미분 공식: (y - t) / (y * (1 - y))
-            # dL/dy = d forward(y, t) / dy 와 같으므로 dout은 상수로 사용할 수 있음.
-            dx = ((self.y - self.t) / (self.y * (1-self.y) + delta)) * dout / batch_size
-            
-            return dx
+    def backward(self, dout=1):
+        """
+        dout: 상류에서 온 미분값 (보통 1)
+        Returns: dx (입력 y에 대한 미분값 dL/dy)
+        """
+        # batch_size 가져오기
+        batch_size = self.y.shape[0]
+        delta = 1e-7
+        
+        # dL/dy 계산
+        # 미분 공식: (y - t) / (y * (1 - y))
+        # dL/dy = d forward(y, t) / dy 와 같으므로 dout은 상수로 사용할 수 있음.
+        dx = ((self.y - self.t) / (self.y * (1-self.y) + delta)) * dout / batch_size
+        return dx
