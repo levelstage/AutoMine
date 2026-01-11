@@ -1,6 +1,7 @@
 import numpy as np
 from collections import OrderedDict
 import layers
+import pickle
 
 class DeepConvNet:
     def __init__(self, input_dim=(10, 10, 10), 
@@ -81,9 +82,6 @@ class DeepConvNet:
             pickle.dump(params, f)
         print(f"학습된 가중치를 저장했습니다: {file_name}")
 
-    # ----------------------------------------------------------------
-    # [추가] 가중치 불러오기 함수
-    # ----------------------------------------------------------------
     def load_params(self, file_name="my_model.pkl"):
         try:
             # 파일 읽기 (rb: read binary)
