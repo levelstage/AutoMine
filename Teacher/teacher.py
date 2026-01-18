@@ -1,6 +1,8 @@
 import numpy as np
 import random
 from collections import deque
+import sys, os
+sys.path.append(os.pardir)  # GameEngine에 접근하기 위하여
 from GameEngine.MsEngine import MsEngine
 
 # 인공지능 모델한테 지뢰찾기의 규칙을 알려줄 선생님
@@ -30,8 +32,14 @@ class MsTeacher:
         grid = np.zeros(shape=(self.height, self.width), dtype=np.int8)
         # 정답 레이블이 될 확률표 (초기값은 모두 균등함. 그럴 수밖에 없음.)
         safety = np.full(grid.shape, 1.0 - self.num_mines/(self.height *self.width), dtype=np.float32)
+        # 단 한번도 확률 변동이 일어나지 않은 칸은 칸이 열릴때마다 계속 확률을 갱신해줘야 하므로 마스크를 따로 만들어줌
+        mask = np.zeros(shape=(self.height, self.width))
         # 이번 데이터 묶음에서 사용할 게임 판. (내용물은 블랙박스임)
         game = MsEngine(self.width, self.height, self.num_mines)
+        # 어두운 칸들 중, 안전이 확정된 칸의 수
+        dark_safe = 0
+        # 어두운 칸들 중, 지뢰가 확정된 칸의 수
+        dark_mine = 0
         
         # 메인 루프. 밝혀지지 않은 칸이 없을 때 까지 진행.
         while len(dark) > self.num_mines:
@@ -63,8 +71,13 @@ class MsTeacher:
                 value = cell[2]
                 # 공개 정보 갱신
                 grid[y][x] = value
+                # 만약 확정된 어두운 안전 칸이었다면 카운트에서 빼줘야 함.
+                if safety[y][x] == 1.0:
+                    dark_safe -= 1
                 # 공개된 칸을 또 누르는 것은 불가능하므로 정답 레이블(안전도)도 0으로 바꾼다.
                 safety[y][x] = 0.0
+                # 자동 확률 갱신 칸 목록에서 삭제
+                mask[y][x] = 1
                 # 밝혀졌으므로 어두운 칸 목록에서 삭제
                 if (x, y) in dark:
                     dark.remove((x, y))
@@ -129,6 +142,8 @@ class MsTeacher:
                         # OutOfBounds 케어
                         if not (0 <= nx < self.width and 0 <= ny < self.height):
                             continue
+                        # 확률 변동이 일어난 칸이므로 자동 확률 갱신 구독을 취소한다.
+                        mask[ny][nx] = 1
                         # 여기도 마찬가지로 이미 밝혀진 칸은 거른다.
                         if grid[ny][nx] > 0:
                             continue
@@ -155,6 +170,12 @@ class MsTeacher:
                             # 만약 이번 갱신으로 '확정(Fact)'이 되었다면, 주변 숫자들을 깨워서 다시 계산시켜야 함
                             # (원래 추측이었는데 확정이 된 경우 -> 파급력이 큼)
                             if new_prob == 1.0 or new_prob == 0.0:
+                                if new_prob == 1.0:
+                                    # 안전 확정이라면 어두운 안전칸 카운트 증가
+                                    dark_safe += 1
+                                else:
+                                    # 지뢰 확정이라면 지뢰 확정칸 카운트 증가
+                                    dark_mine += 1
                                 # 4중 반복문이지만 하는 수 없음.
                                 for ddy in [-1, 0, 1]:
                                     for ddx in [-1, 0, 1]:
@@ -172,7 +193,11 @@ class MsTeacher:
                                         # 역으로 밝혀진 칸들로 가야 한다.
                                         if grid[nny][nnx] > 0:
                                             q.append((nnx, nny, grid[nny][nnx]))
-
+            # 인접 칸의 확률 변동이 한번도 일어나지 않은 칸의 경우는 따로 확률을 바꿔준다.
+            for y in range(self.height):
+                for x in range(self.width):
+                    if mask[y][x]==0:
+                        safety[y][x] = 1.0 - (self.num_mines - dark_mine) / (len(dark) - dark_mine - dark_safe)
             # 모든 확률 갱신이 끝나면 정답 레이블로 추가해준다.
             answers.append(safety.copy())
         return problems, answers
