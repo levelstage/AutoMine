@@ -49,7 +49,7 @@ class MsEngine:
                             continue
                         # 이미 열린 칸은 굳이 또 건들 필요 없음
                         if self.grid[ny][nx] == UNKNOWN:
-                            self.grid[ny][nx] = self.getNum(ny, nx)
+                            self.grid[ny][nx] = self.getNum(nx, ny)
                             # 열린 모든 칸을 결과에 넣어야 함.
                             res.append((nx, ny, self.grid[ny][nx]))
                             if self.grid[ny][nx] == 1:
