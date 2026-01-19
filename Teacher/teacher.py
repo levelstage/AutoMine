@@ -72,10 +72,10 @@ class MsTeacher:
                 # 공개 정보 갱신
                 grid[y][x] = value
                 # 만약 확정된 어두운 안전 칸이었다면 카운트에서 빼줘야 함.
-                if safety[y][x] == 1.0:
+                if abs(safety[y][x] - 1.0) < 1e-7:
                     dark_safe -= 1
-                # 공개된 칸을 또 누르는 것은 불가능하므로 정답 레이블(안전도)도 0으로 바꾼다.
-                safety[y][x] = 0.0
+                # 어차피 마스킹으로 열린 칸은 무시하므로, 논리적으로 열린 칸의 안전도는 1이 맞다.
+                safety[y][x] = 1.0
                 # 자동 확률 갱신 칸 목록에서 삭제
                 mask[y][x] = 1
                 # 밝혀졌으므로 어두운 칸 목록에서 삭제
@@ -94,6 +94,7 @@ class MsTeacher:
                 top = q.popleft()
                 x = top[0]
                 y = top[1]
+                # 엔진 내부에서는 각 숫자 칸을 1 더해서 관리하므로 다시 1 빼서 복호화
                 value = top[2]-1
                 
                 # 우선 주변의 밝혀지지 않은 칸의 수와, 그 중에서도 완전히 안전한 칸, 지뢰 확정인 칸 수를 센다.
@@ -116,9 +117,9 @@ class MsTeacher:
                             continue
                         tot += 1
                         
-                        if safety[ny][nx] == 0.0:
+                        if abs(safety[ny][nx]) < 1e-7:
                             mine += 1
-                        elif safety[ny][nx] == 1.0:
+                        elif abs(safety[ny][nx] - 1.0) < 1e-7:
                             safe += 1
                 
                 # 구한 안전 칸과 지뢰 수를 통해 다른 칸들의 안전도 근사치를 구한다. (한 칸만 Greedy하게 보므로 정확한 확률은 아니다.)
@@ -156,10 +157,10 @@ class MsTeacher:
                         new_prob = prev_prob # 초기화
                         
                         # 확정 정보인 경우
-                        if prob_calculated == 1.0 or prob_calculated == 0.0:
+                        if abs(prob_calculated - 1.0) < 1e-7 or abs(prob_calculated) < 1e-7:
                             new_prob = prob_calculated
                         # 추측인 경우 기존보다 더 위험하면 갱신
-                        elif safety[ny][nx] != 0.0 and safety[ny][nx] != 1.0:
+                        elif abs(safety[ny][nx]) >= 1e-7 and abs(safety[ny][nx] - 1.0) >= 1e-7:
                             if prob_calculated < safety[ny][nx]:
                                 new_prob = prob_calculated
                         
@@ -169,8 +170,8 @@ class MsTeacher:
                             
                             # 만약 이번 갱신으로 '확정(Fact)'이 되었다면, 주변 숫자들을 깨워서 다시 계산시켜야 함
                             # (원래 추측이었는데 확정이 된 경우 -> 파급력이 큼)
-                            if new_prob == 1.0 or new_prob == 0.0:
-                                if new_prob == 1.0:
+                            if abs(new_prob - 1.0) < 1e-7 or abs(new_prob) < 1e-7:
+                                if abs(new_prob - 1.0) < 1e-7:
                                     # 안전 확정이라면 어두운 안전칸 카운트 증가
                                     dark_safe += 1
                                 else:
@@ -193,13 +194,14 @@ class MsTeacher:
                                         # 역으로 밝혀진 칸들로 가야 한다.
                                         if grid[nny][nnx] > 0:
                                             q.append((nnx, nny, grid[nny][nnx]))
-            # 인접 칸의 확률 변동이 한번도 일어나지 않은 칸의 경우는 따로 확률을 바꿔준다.
+            submission = safety.copy()
+            # 인접 칸의 확률 변동이 한번도 일어나지 않은 칸의 경우는 따로 확률을 바꿔준 후 제출한다.
             for y in range(self.height):
                 for x in range(self.width):
-                    if mask[y][x]==0:
-                        safety[y][x] = 1.0 - (self.num_mines - dark_mine) / (len(dark) - dark_mine - dark_safe)
+                    if mask[y][x]==0 and len(dark) - dark_mine - dark_safe > 0:
+                        submission[y][x] = 1.0 - (self.num_mines - dark_mine) / (len(dark) - dark_mine - dark_safe)
             # 모든 확률 갱신이 끝나면 정답 레이블로 추가해준다.
-            answers.append(safety.copy())
+            answers.append(submission)
         return problems, answers
     
     def generate_dataset(self, size):
