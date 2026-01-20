@@ -123,7 +123,7 @@ class MsTeacher:
                             safe += 1
                 
                 # 구한 안전 칸과 지뢰 수를 통해 다른 칸들의 안전도 근사치를 구한다. (한 칸만 Greedy하게 보므로 정확한 확률은 아니다.)
-                # 어떤 한 칸에 지뢰가 있을 확률은 (value-mine)/(tot-safe-mine)이다.(조합을 이용하여 계산한다.)
+                # 어떤 모르는 한 칸에 지뢰가 있을 확률은 (value-mine)/(tot-safe-mine)이다.
                 
                 # 0으로 나누기 방지 (tot-safe-mine이 0이면 계산 불필요)
                 unknowns = tot - mine - safe
@@ -143,11 +143,14 @@ class MsTeacher:
                         # OutOfBounds 케어
                         if not (0 <= nx < self.width and 0 <= ny < self.height):
                             continue
-                        # 확률 변동이 일어난 칸이므로 자동 확률 갱신 구독을 취소한다.
-                        mask[ny][nx] = 1
                         # 여기도 마찬가지로 이미 밝혀진 칸은 거른다.
                         if grid[ny][nx] > 0:
                             continue
+                        # unknown 칸에 대해서만 갱신한다.
+                        if abs(safety[ny][nx] - 1.0) < 1e-7 or abs(safety[ny][nx]) < 1e-7:
+                            continue
+                        # 확률 변동이 일어난 칸이므로 자동 확률 갱신 구독을 취소한다.
+                        mask[ny][nx] = 1
 
                         # 1. 확정된 정보(0.0, 1.0)는 무조건 덮어쓴다. (Fact > Estimate)
                         # 2. 둘 다 추측(Estimate)이라면 더 보수적인(작은) 값을 취한다.
