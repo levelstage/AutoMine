@@ -5,7 +5,11 @@ import numpy as np
 
 class DeepConvNet:
     def __init__(self, input_dim=(10, 10, 10),
-                 hidden_size=256, output_size=100):
+                 hidden_size=256, output_size=100, loss_W=5.0):
+        
+        # 확정 안전, 확정 지뢰에 대한 loss의 가중치 설정 
+        self.loss_W = loss_W
+        
         # 입력받은 형상을 쓰기 좋게 분할해준다
         C, H, W = input_dim
         
@@ -51,9 +55,9 @@ class DeepConvNet:
         y = self.predict(x)
         mask = x[:,0].reshape(x.shape[0], -1)
         weights = np.ones_like(t)
-        # 논리적으로 맞출 수 있는 칸을 틀렸을 때 더 강한 loss를 부여한다.
+        # 논리적으로 맞출 수 있는 칸을 틀렸을 때 더 강한 loss를 부여한다. (가중 loss)
         is_deterministic = (t < 0.05) | (t > 0.95)
-        weights[is_deterministic] = 20.0 # 20배의 loss를 줄 생각
+        weights[is_deterministic] = self.loss_W
         return self.last_layer.forward(y, t, mask, weights)
     
     def gradient(self, x, t):

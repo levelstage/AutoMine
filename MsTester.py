@@ -25,7 +25,6 @@ def visualize_test(net, trainer):
     x = to_one_hot(x_raw) # (1, 10, 10, 10)
     
     # 3. AI 예측
-    # predict 결과는 Logit(점수)이므로 Sigmoid를 씌워 확률로 변환
     logit = net.predict(x)
     pred_prob = logit.reshape(1, -1) # (1, 100)
     

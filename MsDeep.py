@@ -18,7 +18,7 @@ def to_one_hot(grid_batch, num_classes=10):
 
 # 하이퍼파라미터 설정
 epoch_size = 100  # 에폭은 그냥 편의상 나눠서 확인(데이터가 무한히 많음.)
-iters = 1
+iters = 4000
 batch_size = 100
 learning_rate = 0.001
 
