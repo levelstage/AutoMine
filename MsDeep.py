@@ -1,4 +1,5 @@
 from Networks.network import DeepConvNet
+from Networks.optimizer import Adam
 from Teacher.teacher import MsTeacher
 import numpy as np
 
@@ -17,13 +18,17 @@ def to_one_hot(grid_batch, num_classes=10):
 
 # 하이퍼파라미터 설정
 epoch_size = 100  # 에폭은 그냥 편의상 나눠서 확인(데이터가 무한히 많음.)
-iters = 10000
+iters = 1
 batch_size = 100
-learning_rate = 0.01
+learning_rate = 0.001
 
 # 각각의 기본값을 미리 맞춰 두었으므로 그대로 사용.
 net = DeepConvNet()
 trainer = MsTeacher()
+opt = Adam()
+
+# 이전에 학습했던 my_model.pkl 얘를 불러옴
+# net.load_params()
 
 print("학습 시작!")
 for i in range(iters):
@@ -41,16 +46,11 @@ for i in range(iters):
     # 기울기를 구해준다.
     grad = net.gradient(x, t)
     
-    # 구한 기울기를 경사하강법으로 갱신
-    j=1
-    for layer in net.layers.values():
-        if hasattr(layer, 'W'):
-            layer.W -= learning_rate * grad['W'+str(j)]
-            layer.b -= learning_rate * grad['b'+str(j)]
-            j+=1
+    # optimizer로 가중치 갱신!
+    opt.update(net, grad)
+
     # 손실함수값을 한 에폭마다 보여준다.
     loss = net.loss(x, t)
-    if i % epoch_size == 0:
-        print(str(i//epoch_size)+"번째 에폭, 현재 손실: " + str(loss))
+    print(str(i//epoch_size)+"번째 에폭, 현재 손실: " + str(loss))
 net.save_params()
     

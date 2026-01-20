@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from . import layers
 import pickle
+import numpy as np
 
 class DeepConvNet:
     def __init__(self, input_dim=(10, 10, 10),
@@ -49,7 +50,11 @@ class DeepConvNet:
     def loss(self, x, t):
         y = self.predict(x)
         mask = x[:,0].reshape(x.shape[0], -1)
-        return self.last_layer.forward(y, t, mask)
+        weights = np.ones_like(t)
+        # 논리적으로 맞출 수 있는 칸을 틀렸을 때 더 강한 loss를 부여한다.
+        is_deterministic = (t < 0.05) | (t > 0.95)
+        weights[is_deterministic] = 20.0 # 20배의 loss를 줄 생각
+        return self.last_layer.forward(y, t, mask, weights)
     
     def gradient(self, x, t):
         # 순전파 (미분값 저장을 위한)

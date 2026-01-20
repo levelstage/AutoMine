@@ -167,8 +167,9 @@ class BinaryCrossEntropy:
         self.y = None
         self.t = None
         self.mask = None
+        self.weights = None
         
-    def forward(self, y, t, mask):
+    def forward(self, y, t, mask, weights):
         """
         y: 신경망의 출력 (확률값, 0.0 ~ 1.0) - Shape: (N, 1) 또는 (N,)
         t: 정답 레이블 (확률값, 0.0 ~ 1.0) - Shape: y와 동일
@@ -176,6 +177,7 @@ class BinaryCrossEntropy:
         self.y = y
         self.t = t
         self.mask = mask
+        self.weights = weights
 
         #batch_size 가져오기
         batch_size = y.shape[0]
@@ -185,9 +187,10 @@ class BinaryCrossEntropy:
         
         # 배치 전체의 평균 에러 계산
         # 공식: -sum( t*log(y) + (1-t)*log(1-y) ) / batch_size
-        loss = -np.sum((t * np.log(y+delta) + (1-t) * np.log(1-y+delta)) * mask) / np.sum(mask)
-        
-        return loss
+        loss = -(t * np.log(y+delta) + (1-t) * np.log(1-y+delta)) * mask
+        if weights is not None:
+            loss = loss * weights
+        return np.sum(loss) / np.sum(mask)
 
     def backward(self, dout=1):
         """
@@ -201,5 +204,7 @@ class BinaryCrossEntropy:
         # dL/dy 계산
         # 미분 공식: (y - t) / (y * (1 - y))
         # dL/dy = d forward(y, t) / dy 와 같으므로 dout은 상수로 사용할 수 있음.
-        dx = self.mask * ((self.y - self.t) / (self.y * (1-self.y) + delta)) * dout / np.sum(self.mask)
-        return dx
+        dx = self.mask * ((self.y - self.t) / (self.y * (1-self.y) + delta)) * dout
+        if self.weights is not None:
+            dx = dx * self.weights
+        return dx / np.sum(self.mask)
