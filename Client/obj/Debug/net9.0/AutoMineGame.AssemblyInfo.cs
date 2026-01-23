@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AutoMineGame")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+31a430dd5210f5daa12be87ef01ee7a04e543ec2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+04b012ca2c96e324cc939f739cfc499ae244bc9c")]
 [assembly: System.Reflection.AssemblyProductAttribute("AutoMineGame")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AutoMineGame")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
