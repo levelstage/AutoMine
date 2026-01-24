@@ -95,7 +95,6 @@ class DeepConvNet:
         # 파일로 저장 (wb: write binary)
         with open(file_name, 'wb') as f:
             pickle.dump(params, f)
-        print(f"학습된 가중치를 저장했습니다: {file_name}")
 
     def load_params(self, file_name="my_model.pkl"):
         try:
@@ -110,8 +109,6 @@ class DeepConvNet:
                     layer.W = params['W' + str(i)]
                     layer.b = params['b' + str(i)]
                     i += 1
-            print(f"가중치 로드 성공! 학습 없이 바로 사용 가능합니다: {file_name}")
             return True
         except FileNotFoundError:
-            print(f"저장된 파일({file_name})이 없습니다. 새로 학습해야 합니다.")
             return False

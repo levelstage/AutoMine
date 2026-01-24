@@ -215,8 +215,6 @@ class MsTeacher:
             problems = []
             answers = []
             
-            print(f"데이터 생성 중... 목표: {size}개")
-            
             # 목표 개수를 채울 때까지 계속 생성
             while len(problems) < size:
                 dp, da = self.solve()
@@ -241,5 +239,4 @@ class MsTeacher:
             problems = list(problems)
             answers = list(answers)
                 
-            print(f"생성 및 셔플 완료! (X: {len(problems)}, Y: {len(answers)})")
             return problems, answers
