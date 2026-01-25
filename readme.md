@@ -43,4 +43,4 @@
 
 추가로, 자세한 개발 과정은 아래 블로그에 정리해 두었습니다.
 
-https://velog.io/@levelstage/%EB%B0%91%EB%B0%94%EB%8B%A5%EB%B6%80%ED%84%B0-%EC%8B%9C%EC%9E%91%ED%95%98%EB%8A%94-%EC%A7%80%EB%A2%B0%EC%B0%BE%EA%B8%B0-%EC%9D%B8%EA%B3%B5%EC%A7%80%EB%8A%A5-%EA%B0%9C%EB%B0%9C-0-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EA%B0%9C%EC%9A%94
+https://velog.io/@levelstage/AutoMine0
