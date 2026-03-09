@@ -1,3 +1,37 @@
+import sys
+import os
+#  --- [Windows DLL  등록] ---
+# MKL이 몰래 끌어다 쓰는 TBB, OpenMP 등의 경로를 모조리 등록합니다.
+oneapi_root = r"C:\Program Files (x86)\Intel\oneAPI"
+print("의존성 DLL 경로 등록 중...")
+
+# 현재 스크립트 위치 기준으로 build 폴더를 sys.path에 추가 (모듈 검색용)
+sys.path.append(os.path.join(os.path.dirname(__file__), 'build'))
+sys.path.append(os.path.dirname(__file__))
+
+# 인텔 주요 라이브러리 경로들
+extra_dll_paths = [
+    r"compiler\latest\include",
+    r"compiler\latest\bin",
+    r"mkl\latest\include",
+    r"mkl\latest\bin",\
+    r"tbb\latest\include",
+    r"tbb\latest\bin",       # <-- 이게 없어서 터졌을 확률이 매우 높습니다 (스레딩 빌딩 블록)
+    r"compiler\latest\windows\redist\intel64_win\compiler", # OpenMP (libiomp5md.dll)
+    r"mkl\latest\redist\intel64",
+    r"compiler\latest\windows\bin"
+]
+
+for sub in extra_dll_paths:
+    p = os.path.join(oneapi_root, sub)
+    if os.path.exists(p):
+        try:
+            os.add_dll_directory(p)
+            print(f"  -> 등록 완료: {p}")
+        except Exception:
+            pass
+print("-" * 50)
+
 from Networks.network import DeepConvNet
 from Networks.optimizer import Adam
 from Teacher.teacher import MsTeacher
@@ -18,14 +52,14 @@ def to_one_hot(grid_batch, num_classes=10):
 
 # 하이퍼파라미터 설정
 epoch_size = 100  # 에폭은 그냥 편의상 나눠서 확인(데이터가 무한히 많음.)
-iters = 4000
-batch_size = 100
+iters = 2000
+batch_size = 256
 learning_rate = 0.001
 
 # 각각의 기본값을 미리 맞춰 두었으므로 그대로 사용.
 net = DeepConvNet()
 trainer = MsTeacher()
-opt = Adam()
+opt = Adam(lr=learning_rate)
 
 # 이전에 학습했던 my_model.pkl 얘를 불러옴
 # net.load_params()
@@ -44,13 +78,13 @@ for i in range(iters):
     x = to_one_hot(x_raw)
 
     # 기울기를 구해준다.
-    grad = net.gradient(x, t)
+    grad = net.gradient(x.astype(np.float32), t.astype(np.float32))
     
     # optimizer로 가중치 갱신!
     opt.update(net, grad)
 
     # 손실함수값을 한 에폭마다 보여준다.
-    loss = net.loss(x, t)
+    loss = net.loss(x.astype(np.float32), t)
     print(str(i//epoch_size)+"번째 에폭, 현재 손실: " + str(loss))
 net.save_params()
     
